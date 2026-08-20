@@ -130,6 +130,21 @@ def get_revision_list(model_path: str, all_revisions: list[str]) -> list[str]:
     indices = sample_log_indices(min(min_k_stage1, len(checkpoints_sorted)), checkpoints_sorted)
     return [checkpoints_sorted[i] for i in indices]
 
+
+def load_jsonl(path: str) -> list[dict]:
+    """Loads a jsonl file. Falls back to ast.literal_eval per line in case
+    entries are Python-dict-repr style (single quotes) rather than strict JSON."""
+    records = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    records.append(ast.literal_eval(line))
+    return records
+
     
 def next_seq_prob(model, tokenizer, seen, unseen):
     device = next(model.parameters()).device  # get model's actual device
@@ -150,6 +165,58 @@ def next_seq_prob(model, tokenizer, seen, unseen):
     total_prob = torch.exp(total_log_prob)
     return total_prob.item()
 
+
+def main(model_path, revision = None, suffix=None):
+
+    # Set up save path, filename, etc.
+    savepath = f"data/processed/fb_local_multi_verb/"
+    if not os.path.exists(savepath): 
+        os.makedirs(savepath)
+
+    if "/" in model_path:
+        filename = f"fb-{model_path.split('/')[-1]}-{suffix}.csv"
+    else:
+        filename = f"fb-{model_path.split('/')[-1]}-{suffix}.csv"
+
+    print(filename)
+    print(savepath)
+
+
+    # Skip if already computed
+    output_path = os.path.join(savepath,filename)
+    if os.path.exists(output_path):
+        print(f"  Skipping {revision} — already exists at {filename}")
+        return
+    
+
+    ### Load model
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        revision=revision,
+        device_map="auto",
+        # use_auth_token=True
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+
+    results = []
+    ### Run model
+    with open(filepath, "r", encoding = "utf-8") as file:
+        for line_number, line in enumerate(file, start=1):
+            try:
+                row = json.loads(line)
+
+                ### Run model
+                reduced_passage = row["passage"]
+                start_location = " " + row["start"]
+                end_location = " " + row["end"]
+
+                start_prob = next_seq_prob(model, tokenizer, passage, start_location)
+                end_prob = next_seq_prob(model, tokenizer, passage, end_location)
+
+            except json.JSONDecodeError:
+                print(f"Error parsing line {line_number}: {line.strip()}")
 
 # ---------------------------------------------------------------------------
 # Config / Model Loading
@@ -174,25 +241,6 @@ def load_model_and_tokenizer(model_name: str = MODEL_NAME):
     if DEVICE == "cpu":
         model.to(DEVICE)
     return model, tokenizer
-
-
-# ---------------------------------------------------------------------------
-# Load jsonl file
-# ---------------------------------------------------------------------------
-
-def load_jsonl(path: str) -> list[dict]:
-    """Loads a jsonl file. Falls back to ast.literal_eval per line in case
-    entries are Python-dict-repr style (single quotes) rather than strict JSON."""
-    records = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-	            try:
-	                records.append(json.loads(line))
-	            except json.JSONDecodeError:
-	                records.append(ast.literal_eval(line))
-    return records
 				
 
 # ---------------------------------------------------------------------------
@@ -299,3 +347,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # specify filepath to load data from, and savepath to save outputs to
+
+
