@@ -219,6 +219,7 @@ def main(model_path, revision = None, suffix=None):
                     continue
 
                 verb = row['verb']
+                tokenized_passage = ...
 
                 # TODO: add the tokenized passage here too!
 
