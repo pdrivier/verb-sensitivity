@@ -220,6 +220,8 @@ def main(model_path, revision = None, suffix=None):
 
                 verb = row['verb']
 
+                # TODO: add the tokenized passage here too!
+
                 results.append({
                 'start_prob': start_prob,
                 'end_prob': end_prob,
@@ -235,7 +237,8 @@ def main(model_path, revision = None, suffix=None):
                 'log_odds': np.log2(start_prob / end_prob),
                 'verb': verb, # TODO: double-check these rows in the jsonl to make sure
                 'verb_type': row['verb'],
-                'relocation_verb_tense': row['relocation_verb_tense']
+                'relocation_verb_tense': row['relocation_verb_tense'],
+                'query': row['query']
             })
 
             except json.JSONDecodeError:
