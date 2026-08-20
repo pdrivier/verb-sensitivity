@@ -28,11 +28,11 @@ MODELS = {
     # "EleutherAI/pythia-6.9b": "Pythia 6.9B",
     # "EleutherAI/pythia-12b": "Pythia 12B",
     # "allenai/OLMo-2-1124-13B": "OLMO 2 13B",
-    # "allenai/OLMo-2-1124-7B": "OLMO 2 7B",
-    "allenai/OLMo-2-0425-1B": "OLMO 2 1B",
+     "allenai/OLMo-2-1124-7B": "OLMO 2 7B",
+    #"allenai/OLMo-2-0425-1B": "OLMO 2 1B",
 }
 
-INPUT_JSONL = "input.jsonl"
+INPUT_JSONL = "verb-stims.jsonl"
 OUTPUT_PATH = "olmo2_start_end_logprobs.pkl"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
