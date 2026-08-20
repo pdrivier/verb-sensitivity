@@ -218,7 +218,7 @@ def main(model_path, revision = None, suffix=None):
                 if start_prob == 0 or end_prob == 0:
                     continue
 
-                verb = ...
+                verb = row['verb']
 
                 results.append({
                 'start_prob': start_prob,
@@ -233,9 +233,9 @@ def main(model_path, revision = None, suffix=None):
                 'first_mention': row['first_mention'],
                 'recent_mention': row['recent_mention'],
                 'log_odds': np.log2(start_prob / end_prob),
-                'verb': verb,
+                'verb': verb, # TODO: double-check these rows in the jsonl to make sure
                 'verb_type': row['verb'],
-                'relocation_verb_tense': row['']
+                'relocation_verb_tense': row['relocation_verb_tense']
             })
 
             except json.JSONDecodeError:
