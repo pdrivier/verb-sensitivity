@@ -169,7 +169,7 @@ def next_seq_prob(model, tokenizer, seen, unseen):
 def main(model_path, revision = None, suffix=None):
 
     # Set up save path, filename, etc.
-    savepath = f"data/processed/fb_local_multi_verb/"
+    savepath = f"data/processed/verb-factivity/"
     if not os.path.exists(savepath): 
         os.makedirs(savepath)
 
@@ -214,6 +214,29 @@ def main(model_path, revision = None, suffix=None):
 
                 start_prob = next_seq_prob(model, tokenizer, passage, start_location)
                 end_prob = next_seq_prob(model, tokenizer, passage, end_location)
+
+                if start_prob == 0 or end_prob == 0:
+                    continue
+
+                verb = ...
+
+                results.append({
+                'start_prob': start_prob,
+                'end_prob': end_prob,
+                'passage': row['passage'],
+                'start': row['start'],
+                'end': row['end'],
+                'knowledge_state_format': row['knowledge_state_format'],
+                'knowledge_cue': row['knowledge_cue'],
+                'knowledge_state': row['knowledge_state'],
+                'cues_available': row['cues_available'],
+                'first_mention': row['first_mention'],
+                'recent_mention': row['recent_mention'],
+                'log_odds': np.log2(start_prob / end_prob),
+                'verb': verb,
+                'verb_type': row['verb'],
+                'relocation_verb_tense': row['']
+            })
 
             except json.JSONDecodeError:
                 print(f"Error parsing line {line_number}: {line.strip()}")
