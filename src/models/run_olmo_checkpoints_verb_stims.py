@@ -165,6 +165,12 @@ def next_seq_prob(model, tokenizer, seen, unseen):
     total_prob = torch.exp(total_log_prob)
     return total_prob.item()
 
+def return_tokenized_passage(tokenizer, seen):
+    input_ids = tokenizer.encode(seen, return_tensors="pt")
+    tokenized_passage = tokenizer.convert_ids_to_tokens(input_ids)
+
+    return tokenized_passage
+
 
 def main(model_path, revision = None, suffix=None):
 
