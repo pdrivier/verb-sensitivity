@@ -31,7 +31,7 @@ verb_dict = {"knows": "factive",
 	"thinks": "nonfactive",
 	"assumes": "nonfactive",
 	"believes": "nonfactive",
-	"suspects": "nonfactive"
+	"suspects": "nonfactive",
 	"neutral": "neutral"
 }
 
@@ -62,6 +62,7 @@ for i,row in tqdm(df.iterrows()):
 			"passage": passage,
 			"query": query,
 			"verb": verb,
+			"verb_type": verb_type,
 			"start": row["start"],
 			"end": row["end"],
 			"first_mention": row["first_mention"],
