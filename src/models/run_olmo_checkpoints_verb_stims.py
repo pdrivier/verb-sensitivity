@@ -248,7 +248,6 @@ def main(model_path, filepath, revision = None, suffix=None):
                 'query': row['query']
                 })
 
-                pbar.update(1)
 
             except json.JSONDecodeError:
                 print(f"Error parsing line {line_number}: {line.strip()}")
