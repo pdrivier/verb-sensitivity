@@ -218,21 +218,22 @@ def main(model_path, revision = None, suffix=None):
                 start_location = " " + row["start"]
                 end_location = " " + row["end"]
 
-                start_prob = next_seq_prob(model, tokenizer, passage, start_location)
-                end_prob = next_seq_prob(model, tokenizer, passage, end_location)
+                start_prob = next_seq_prob(model, tokenizer, reduced_passage, start_location)
+                end_prob = next_seq_prob(model, tokenizer, reduced_passage, end_location)
 
                 if start_prob == 0 or end_prob == 0:
                     continue
 
                 verb = row['verb']
-                tokenized_passage = ...
+                tokenized_passage = return_tokenized_passage(tokenizer, reduced_passage)
 
                 # TODO: add the tokenized passage here too!
 
                 results.append({
                 'start_prob': start_prob,
                 'end_prob': end_prob,
-                'passage': row['passage'],
+                'passage': reduced_passage,
+                'tokenized_passage': tokenized_passage,
                 'start': row['start'],
                 'end': row['end'],
                 'knowledge_state_format': row['knowledge_state_format'],
