@@ -333,7 +333,7 @@ if __name__ == "__main__":
                 suffix = rev.replace("/", "_") # to tag output files uniquely
                 
                 # Set up save path, filename, etc.
-                savepath = f"data/processed/fb_local_multi_verb/"
+                savepath = f"data/processed/verb-factivity/"
                 if not os.path.exists(savepath): 
                     os.makedirs(savepath)
             
