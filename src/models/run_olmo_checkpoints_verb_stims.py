@@ -31,7 +31,7 @@ from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import list_repo_refs
 
-from del_models import clear_huggingface_cache
+
 
 # ---------------------------------------------------------------------------
 # List of Models
@@ -280,7 +280,7 @@ def main(model_path, filepath, revision = None, suffix=None):
 
 
 				
-                
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run verb sensitivity stims")
     parser.add_argument(
