@@ -24,6 +24,17 @@ filepath = os.path.join(directory,filename)
 df = pd.read_csv(filepath)
 query_cols = [col for col in df.columns if "critical" in col]
 
+# Define the verb types 
+verb_dict = {"knows": "factive", 
+	"understands": "factive", 
+	"recognizes": "factive", 
+	"thinks": "nonfactive",
+	"assumes": "nonfactive",
+	"believes": "nonfactive",
+	"suspects": "nonfactive"
+	"neutral": "neutral"
+}
+
 results = []
 count = 0
 for i,row in tqdm(df.iterrows()):
@@ -31,6 +42,13 @@ for i,row in tqdm(df.iterrows()):
 
 		# grab the verb to generate the relevant verb label in the json entry
 		verb = col.split("_")[-1]
+
+		if verb not in verb_dict:
+			raise KeyError(
+				f"No verb_type mapping for {verb!r} (from column {col!r})"
+				f"Known verbs: {sorted(verb_dict)}"
+				)
+		verb_type = verb_dict[verb]
 
 		# grab components to the full prompt, stripping potential whitespaces at the end
 		reduced_passage = row["reduced_passage"].rstrip()

@@ -167,7 +167,7 @@ def next_seq_prob(model, tokenizer, seen, unseen):
     return total_prob.item()
 
 def return_tokenized_passage(tokenizer, seen):
-    input_ids = tokenizer.encode(seen, return_tensors="pt")
+    input_ids = tokenizer.encode(seen)
     tokenized_passage = tokenizer.convert_ids_to_tokens(input_ids)
 
     return tokenized_passage
@@ -243,8 +243,8 @@ def main(model_path, filepath, revision = None, suffix=None):
                 'first_mention': row['first_mention'],
                 'recent_mention': row['recent_mention'],
                 'log_odds': np.log2(start_prob / end_prob),
-                'verb': verb, # TODO: double-check these rows in the jsonl to make sure
-                'verb_type': row['verb'],
+                'verb': verb, 
+                'verb_type': row['verb_type'],
                 'relocation_verb_tense': row['relocation_verb_tense'],
                 'query': row['query']
                 })
