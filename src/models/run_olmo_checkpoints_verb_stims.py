@@ -172,7 +172,7 @@ def return_tokenized_passage(tokenizer, seen):
     return tokenized_passage
 
 
-def main(model_path, revision = None, suffix=None):
+def main(model_path, filepath, revision = None, suffix=None):
 
     # Set up save path, filename, etc.
     savepath = f"data/processed/verb-factivity/"
@@ -246,14 +246,45 @@ def main(model_path, revision = None, suffix=None):
                 'verb_type': row['verb'],
                 'relocation_verb_tense': row['relocation_verb_tense'],
                 'query': row['query']
-            })
+                })
+
+                pbar.update(1)
 
             except json.JSONDecodeError:
                 print(f"Error parsing line {line_number}: {line.strip()}")
 
+    ### Create DataFRame
+    df_results = pd.DataFrame(results)
+    df_results['model_path'] = model_path
+    df_results['model_shorthand'] = MODELS[model_path]
+
+    if revision:
+        parts = revision.split("-")  # e.g., ['stage2', 'ingredient4', 'step102500', 'tokens860B']
+        stage = next((p for p in parts if p.startswith("stage")), None)
+        ingredient = next((p for p in parts if p.startswith("ingredient")), None)
+        step = next((p for p in parts if p.startswith("step")), None)
+        tokens = next((p for p in parts if p.startswith("tokens")), None)
+
+        df_results['stage'] = stage
+        df_results['ingredient'] = ingredient
+        df_results['step'] = int(step.replace("step", "")) if step else None
+        df_results['tokens_seen'] = tokens.replace("tokens", "") if tokens else None
+    else:
+        df_results['stage'] = None
+        df_results['ingredient'] = None
+        df_results['step'] = None
+        df_results['tokens_seen'] = None
+
+
+    df_results.to_csv(os.path.join(savepath,filename), index=False)
+
+
+
 # ---------------------------------------------------------------------------
 # Config / Model Loading
 # ---------------------------------------------------------------------------
+
+# TODO: ADD for loop here to iterate through models and checkpoints
 
 MODEL_NAME = "allenai/OLMo-2-1124-7B"  
 INPUT_JSONL = "input.jsonl"
@@ -379,7 +410,77 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    # specify filepath to load data from, and savepath to save outputs to
+    parser = argparse.ArgumentParser(description="Run verb sensitivity stims")
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help=(
+            "Optional HuggingFace model id (e.g., EleutherAI/pythia-14m). "
+            "If not set, iterate default roster with skip rules."
+        ),
+    )
+    parser.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print correctness summary (overall and by Q1-4) after running",
+    )
+    args = parser.parse_args()
 
 
+
+    if args.model is not None:
+        print("Running:", args.model)
+        main(args.model, summary=args.summary)
+    else:
+
+        filepath = "data/raw/verb-stims.jsonl"
+        # Only run select Olmo 13B checkpoints
+        for model_path in MODELS.keys():
+            
+            # Grab the list of available revisions for this model
+            refs = list_repo_refs(model_path)
+        
+            # Combine and deduplicate all tag/branch names
+            all_revisions = [b.name for b in refs.branches] + [t.name for t in refs.tags]
+            if not all_revisions:
+                print(f"No usable checkpoints found for {model_path}, skipping.")
+                continue
+                    
+            revision_list = get_revision_list(model_path, all_revisions)
+            print(revision_list)
+
+            # revision_list = ['step143000']
+        
+        
+            for rev in revision_list:
+                print(f"Running FB with checkpoint: {rev}")
+        
+                revision = rev # pass revision into main
+                suffix = rev.replace("/", "_") # to tag output files uniquely
+                
+                # Set up save path, filename, etc.
+                savepath = f"data/processed/fb_local_multi_verb/"
+                if not os.path.exists(savepath): 
+                    os.makedirs(savepath)
+            
+                if "/" in model_path:
+                    filename = f"fb-{model_path.split('/')[-1]}-{suffix}.csv"
+                else:
+                    filename = f"fb-{model_path.split('/')[-1]}-{suffix}.csv"
+            
+                # Skip this checkpoint's analysis if you've already run it before
+                print("Checking if we've already run this analysis...")
+                if os.path.exists(os.path.join(savepath,filename)):
+                    print("Already run this model for this checkpoint.")
+                    continue
+        
+                main(model_path=model_path,
+                    filepath = filepath,
+                     revision=revision,  
+                     suffix=suffix)  
+
+                #clear_huggingface_cache()
+                
+                
+            
