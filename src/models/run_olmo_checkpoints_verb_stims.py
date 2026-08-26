@@ -227,7 +227,6 @@ def main(model_path, revision = None, suffix=None):
                 verb = row['verb']
                 tokenized_passage = return_tokenized_passage(tokenizer, reduced_passage)
 
-                # TODO: add the tokenized passage here too!
 
                 results.append({
                 'start_prob': start_prob,
