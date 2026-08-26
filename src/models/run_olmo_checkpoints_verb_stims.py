@@ -18,6 +18,7 @@ NOTE: requires first tokenizing each passage according to the LM in question
 """
 
 import argparse
+import json
 
 import pandas as pd
 import numpy as np
