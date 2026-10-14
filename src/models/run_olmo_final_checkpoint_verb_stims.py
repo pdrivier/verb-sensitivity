@@ -4,6 +4,8 @@ For Pythia: step143000 (final checkpoint).
 For OLMo 2: last checkpoint from log-spaced stage1 sample.
 """
 import argparse
+import json
+
 import re
 import pandas as pd
 import numpy as np
