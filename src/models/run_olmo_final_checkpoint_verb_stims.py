@@ -160,8 +160,8 @@ def return_tokenized_passage(tokenizer, seen):
     return tokenized_passage
 
 
-def main(model_path, revision=None, suffix="final"):
-    savepath = f"data/processed/fb_local_multi_verb/"
+def main(model_path, filepath, revision=None, suffix="final"):
+    savepath = f"data/processed/verb-factivity-reduced-stims/"
     os.makedirs(savepath, exist_ok=True)
 
     model_name = model_path.split("/")[-1]
@@ -277,6 +277,9 @@ if __name__ == "__main__":
         suffix = rev.replace("/", "_")
         main(args.model, revision=rev, suffix=suffix)
     else:
+
+    	filepath = "data/raw/verb-stims.jsonl"
+
         for model_path in MODELS.keys():
             is_pythia = "pythia" in model_path.lower()
 
@@ -287,5 +290,5 @@ if __name__ == "__main__":
 
             suffix = rev.replace("/", "_")
             print(f"Running FB for: {model_path} @ {rev}")
-            main(model_path, revision=rev, suffix=suffix)
+            main(model_path, filepath = filepath, revision=rev, suffix=suffix)
             clear_huggingface_cache()
