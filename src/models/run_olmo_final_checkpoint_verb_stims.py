@@ -177,6 +177,8 @@ def main(model_path, revision=None, suffix="final"):
         model_path,
         revision=revision,
         device_map="auto",
+        dtype=torch.bfloat16,   # or dtype=... in newer transformers
+        low_cpu_mem_usage=True,
     )
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
