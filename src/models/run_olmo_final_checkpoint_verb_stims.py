@@ -280,7 +280,7 @@ if __name__ == "__main__":
 
     	filepath = "data/raw/verb-stims.jsonl"
 
-        for model_path in MODELS.keys():
+    	for model_path in MODELS.keys():
             is_pythia = "pythia" in model_path.lower()
 
             if is_pythia:
