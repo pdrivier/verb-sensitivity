@@ -77,24 +77,33 @@ MODELS = {
 
 def sample_log_indices(k, mylist):
     """k: number of points to sample from list"""
-    if k > len(mylist):
-        raise ValueError("k cannot be larger than the length of the list")
-    # Generate more points than needed, to reduce chances of duplicates
+
+    n = len(mylist)
+    if k < 1:
+        raise ValueError("k must be at least 1")
+    if n == 0:
+        raise ValueError("mylist is empty")
+    if k >= n:
+        return list(range(n))
+    
+    # This function originally began below, but I was running into issues where a stage2-ingredient
+    # only had a single checkpoint, and was throwing errors here because the actual k was smaller 
+    # than my threshold
+    #if k > len(mylist):
+    #    raise ValueError("k cannot be larger than the length of the list")
     oversample_factor = 2
     raw = np.logspace(0, np.log10(len(mylist) - 1), num=k * oversample_factor)
     indices = np.unique(raw.astype(int))
     if indices[-1] != (len(mylist) - 1):
-        indices = np.hstack((indices, len(mylist)-1))
+        indices = np.hstack((indices, len(mylist) - 1))
     if indices[0] != 0:
         indices = np.hstack((0, indices))
-    # Redo everything with a larger oversampling factor if you end up with fewer than 
-    # your intended target checkpoints
-    while len(indices) < k: 
+    while len(indices) < k:
         oversample_factor += 1
         raw = np.logspace(0, np.log10(len(mylist) - 1), num=k * oversample_factor)
         indices = np.unique(raw.astype(int))
         if indices[-1] != (len(mylist) - 1):
-            indices = np.hstack((indices, len(mylist)-1))
+            indices = np.hstack((indices, len(mylist) - 1))
         if indices[0] != 0:
             indices = np.hstack((0, indices))
     return indices
