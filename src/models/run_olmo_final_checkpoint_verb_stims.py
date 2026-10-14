@@ -12,7 +12,7 @@ import os
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from huggingface_hub import list_repo_refs
-#from del_models import clear_huggingface_cache
+from del_models import clear_huggingface_cache
 
 
 # ---------------------------------------------------------------------------
@@ -24,9 +24,12 @@ MODELS = {
     # "EleutherAI/pythia-1b": "Pythia 1B",
     # "EleutherAI/pythia-6.9b": "Pythia 6.9B",
     # "EleutherAI/pythia-12b": "Pythia 12B",
+    "allenai/OLMo-2-0325-32B": "OLMO 2 32B",
     "allenai/OLMo-2-1124-13B": "OLMO 2 13B",
-    #"allenai/OLMo-2-1124-7B": "OLMO 2 7B",
-    #"allenai/OLMo-2-0425-1B": "OLMO 2 1B",
+    "allenai/OLMo-2-1124-7B": "OLMO 2 7B",
+    "allenai/OLMo-2-0425-1B": "OLMO 2 1B",
+    "allenai/Olmo-3-1025-7B": "OLMO 3 7B",
+    "allenai/Olmo-3-32B-Think": "OLMo 3 32B-Think"
 }
 
 PYTHIA_FINAL_REVISION = "step143000"
@@ -283,4 +286,4 @@ if __name__ == "__main__":
             suffix = rev.replace("/", "_")
             print(f"Running FB for: {model_path} @ {rev}")
             main(model_path, revision=rev, suffix=suffix)
-            #clear_huggingface_cache()
+            clear_huggingface_cache()
