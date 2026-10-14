@@ -171,7 +171,7 @@ def next_seq_prob(model, tokenizer, seen, unseen):
         # Append next token to input
         next_token_tensor = torch.tensor([[unseen_id]], device=device)
         input_ids = torch.cat((input_ids, next_token_tensor), dim=1)
-    total_log_prob = sum(log_probs) #TODO: hmmm why not mean here? we've been doing it like these for all of them but consider revising across the board!
+    total_log_prob = sum(log_probs) 
     total_prob = torch.exp(total_log_prob)
     return total_prob.item()
 

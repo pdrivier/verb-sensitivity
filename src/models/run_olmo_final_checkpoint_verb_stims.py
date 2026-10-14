@@ -38,8 +38,20 @@ PYTHIA_FINAL_REVISION = "step143000"
 
 def sample_log_indices(k, mylist):
     """k: number of points to sample from list"""
-    if k > len(mylist):
-        raise ValueError("k cannot be larger than the length of the list")
+
+    n = len(mylist)
+    if k < 1:
+        raise ValueError("k must be at least 1")
+    if n == 0:
+        raise ValueError("mylist is empty")
+    if k >= n:
+        return list(range(n))
+    
+    # This function originally began below, but I was running into issues where a stage2-ingredient
+    # only had a single checkpoint, and was throwing errors here because the actual k was smaller 
+    # than my threshold
+    #if k > len(mylist):
+    #    raise ValueError("k cannot be larger than the length of the list")
     oversample_factor = 2
     raw = np.logspace(0, np.log10(len(mylist) - 1), num=k * oversample_factor)
     indices = np.unique(raw.astype(int))
@@ -106,6 +118,19 @@ def get_last_stage1_from_revision_list(model_path: str) -> str:
     print(f"  Last stage1 checkpoint from revision list for {model_path}: {last}")
     return last
 
+def load_jsonl(path: str) -> list[dict]:
+    """Loads a jsonl file. Falls back to ast.literal_eval per line in case
+    entries are Python-dict-repr style (single quotes) rather than strict JSON."""
+    records = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    records.append(ast.literal_eval(line))
+    return records
 
 def next_seq_prob(model, tokenizer, seen, unseen):
     device = next(model.parameters()).device
@@ -124,6 +149,12 @@ def next_seq_prob(model, tokenizer, seen, unseen):
     total_log_prob = sum(log_probs)
     total_prob = torch.exp(total_log_prob)
     return total_prob.item()
+
+def return_tokenized_passage(tokenizer, seen):
+    input_ids = tokenizer.encode(seen)
+    tokenized_passage = tokenizer.convert_ids_to_tokens(input_ids)
+
+    return tokenized_passage
 
 
 def main(model_path, revision=None, suffix="final"):
@@ -144,62 +175,80 @@ def main(model_path, revision=None, suffix="final"):
         revision=revision,
         device_map="auto",
     )
-    tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-    df_fb = pd.read_csv("data/raw/fb_multi_verbs.csv")
 
     results = []
-    with tqdm(total=len(df_fb)) as pbar:
-        for index, row in df_fb.iterrows():
-            passage = row["passage"].replace(" [MASK].", "").strip()
-            start_location = " " + row["start"]
-            end_location = " " + row["end"]
+    ### Run model
+    with open(filepath, "r", encoding = "utf-8") as file:
+        for line_number, line in enumerate(file, start=1):
+            try:
+                row = json.loads(line)
 
-            start_prob = next_seq_prob(model, tokenizer, passage, start_location)
-            end_prob = next_seq_prob(model, tokenizer, passage, end_location)
+                ### Run model
+                reduced_passage = row["passage"]
+                start_location = " " + row["start"]
+                end_location = " " + row["end"]
 
-            if start_prob == 0 or end_prob == 0:
-                continue
+                start_prob = next_seq_prob(model, tokenizer, reduced_passage, start_location)
+                end_prob = next_seq_prob(model, tokenizer, reduced_passage, end_location)
 
-            results.append({
-                "start_prob": start_prob,
-                "end_prob": end_prob,
-                "passage": row["passage"],
-                "start": row["start"],
-                "end": row["end"],
-                "knowledge_cue": row["knowledge_cue"],
-                "first_mention": row["first_mention"],
-                "recent_mention": row["recent_mention"],
-                "log_odds": np.log2(start_prob / end_prob),
-                "condition": row["condition"],
-                'verb_type': row["verb_type"],
-                'verb': row['verb']
-            })
-            pbar.update(1)
+                if start_prob == 0 or end_prob == 0:
+                    continue
 
+                verb = row['verb']
+                tokenized_passage = return_tokenized_passage(tokenizer, reduced_passage)
+
+
+                results.append({
+                'start_prob': start_prob,
+                'end_prob': end_prob,
+                'passage': reduced_passage,
+                'tokenized_passage': tokenized_passage,
+                'start': row['start'],
+                'end': row['end'],
+                'knowledge_state_format': row['knowledge_state_format'],
+                'knowledge_cue': row['knowledge_cue'],
+                'knowledge_state': row['knowledge_state'],
+                'cues_available': row['cues_available'],
+                'first_mention': row['first_mention'],
+                'recent_mention': row['recent_mention'],
+                'log_odds': np.log2(start_prob / end_prob),
+                'verb': verb, 
+                'verb_type': row['verb_type'],
+                'relocation_verb_tense': row['relocation_verb_tense'],
+                'query': row['query']
+                })
+
+
+            except json.JSONDecodeError:
+                print(f"Error parsing line {line_number}: {line.strip()}")
+
+    ### Create DataFRame
     df_results = pd.DataFrame(results)
-    df_results["model_path"] = model_path
-    df_results["model_shorthand"] = MODELS[model_path]
+    df_results['model_path'] = model_path
+    df_results['model_shorthand'] = MODELS[model_path]
 
     if revision:
-        parts = revision.split("-")
+        parts = revision.split("-")  # e.g., ['stage2', 'ingredient4', 'step102500', 'tokens860B']
         stage = next((p for p in parts if p.startswith("stage")), None)
         ingredient = next((p for p in parts if p.startswith("ingredient")), None)
         step = next((p for p in parts if p.startswith("step")), None)
         tokens = next((p for p in parts if p.startswith("tokens")), None)
 
-        df_results["stage"] = stage
-        df_results["ingredient"] = ingredient
-        df_results["step"] = int(step.replace("step", "")) if step else None
-        df_results["tokens_seen"] = tokens.replace("tokens", "") if tokens else None
+        df_results['stage'] = stage
+        df_results['ingredient'] = ingredient
+        df_results['step'] = int(step.replace("step", "")) if step else None
+        df_results['tokens_seen'] = tokens.replace("tokens", "") if tokens else None
     else:
-        df_results["stage"] = None
-        df_results["ingredient"] = None
-        df_results["step"] = None
-        df_results["tokens_seen"] = None
+        df_results['stage'] = None
+        df_results['ingredient'] = None
+        df_results['step'] = None
+        df_results['tokens_seen'] = None
 
-    df_results.to_csv(output_path, index=False)
-    print(f"  Saved: {output_path}")
+
+    df_results.to_csv(os.path.join(savepath,filename), index=False)
+
 
 
 if __name__ == "__main__":
