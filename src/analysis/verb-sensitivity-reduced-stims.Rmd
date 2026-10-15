@@ -56,6 +56,14 @@ df_all_models = df_all_models %>%
 df_all_models$step[is.na(df_all_models$step)] <- 143000 #hard-coded the final step 
 
 
+# sort df columns by model name and step value
+df_all_models <- df_all_models %>%
+  arrange(model_shorthand, step)  # arrange in ascending order
+
+metadata <- read_csv("data/raw/metadata_models.csv")
+# merge the metadata with the fb task df
+df_all_models_control_task <- df_all_models %>% left_join(metadata, by = "model_shorthand")
+
 
 ```
 
