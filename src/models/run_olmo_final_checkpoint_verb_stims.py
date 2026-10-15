@@ -78,8 +78,8 @@ def sample_log_indices(k, mylist):
 def get_revision_list(model_path: str, all_revisions: list[str]) -> list[str]:
     """Return a revision list with stage-aware or fallback log sampling."""
     def parse_step(x):
-        match = re.search(r"step(\d+)", x)
-        return int(match.group(1)) if match else float("inf")
+    	match = re.search(r"step(\d+)", x)
+    	return int(match.group(1)) if match else float("inf")
     checkpoints_sorted = sorted(all_revisions, key=parse_step)
     stage1_ckpts = [c for c in checkpoints_sorted if "stage1" in c]
     stage2_ckpts = [c for c in checkpoints_sorted if "stage2" in c]
@@ -88,15 +88,19 @@ def get_revision_list(model_path: str, all_revisions: list[str]) -> list[str]:
         print(f"Found stage1 ({len(stage1_ckpts)}) and stage2 ({len(stage2_ckpts)}) checkpoints.")
         logstage1 = sample_log_indices(min_k_stage1, stage1_ckpts)
         selected1 = [stage1_ckpts[i] for i in logstage1]
-
-        ingredients_list = [int(c.split("ingredient")[-1][0]) for c in stage2_ckpts]
-        n_ingredients = np.unique(ingredients_list)
-        min_k_stage2 = 5
-        selected2 = []
-        for ingredient in n_ingredients:
-            current_list = [c for c in stage2_ckpts if "ingredient" + str(ingredient) in c]
-            logstage2 = sample_log_indices(min_k_stage2, current_list)
-            selected2.append([current_list[i] for i in logstage2])
+        if "ingredient" in stage2_ckpts:
+	        ingredients_list = [int(c.split("ingredient")[-1][0]) for c in stage2_ckpts]
+	        n_ingredients = np.unique(ingredients_list)
+	        min_k_stage2 = 5
+	        selected2 = []
+	        for ingredient in n_ingredients:
+	            current_list = [c for c in stage2_ckpts if "ingredient" + str(ingredient) in c]
+	            logstage2 = sample_log_indices(min_k_stage2, current_list)
+	            selected2.append([current_list[i] for i in logstage2])
+        else:
+        	# just keep all of them for now, until you have a better sense for what you'd 
+        	# like to explore with stage 2 -- this especially applies to Olmo 3 models
+        	selected2 = stage2_ckpts   
         all_selected = selected1 + selected2
         return [item for sublist in all_selected for item in (sublist if isinstance(sublist, list) else [sublist])]
 
