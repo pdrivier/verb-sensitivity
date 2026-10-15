@@ -109,7 +109,7 @@ def get_revision_list(model_path: str, all_revisions: list[str]) -> list[str]:
     print(f"No stage1/stage2 structure found for {model_path}. Using fallback.")
     if len(checkpoints_sorted) < 40:
     	# just keep all of them
-    	indices,  = enumerate(checkpoints_sorted)
+    	indices = range(0,len(checkpoints_sorted))
     else: 
 	    indices = sample_log_indices(min(min_k_stage1, len(checkpoints_sorted)), checkpoints_sorted)
     return [checkpoints_sorted[i] for i in indices]
@@ -130,9 +130,9 @@ def get_last_stage1_from_revision_list(model_path: str) -> str:
     	warnings.warn(f"No stage1 checkpoints in revision list for {model_path}")
     	last = revision_list[-1]
     	print(f"  Last checkpoint from revision list for {model_path}: {last}")
-	else: 
-		last = stage1_from_list[-1]
-		print(f"  Last stage1 checkpoint from revision list for {model_path}: {last}")
+    else: 
+    	last = stage1_from_list[-1]
+    	print(f"  Last stage1 checkpoint from revision list for {model_path}: {last}")
     
     return last
 
@@ -250,7 +250,7 @@ def main(model_path, filepath, revision=None, suffix="final"):
     df_results['model_path'] = model_path
     df_results['model_shorthand'] = MODELS[model_path]
 
-    if revision:
+    if revision and not "Olmo-3" in model_path:
         parts = revision.split("-")  # e.g., ['stage2', 'ingredient4', 'step102500', 'tokens860B']
         stage = next((p for p in parts if p.startswith("stage")), None)
         ingredient = next((p for p in parts if p.startswith("ingredient")), None)
@@ -261,11 +261,22 @@ def main(model_path, filepath, revision=None, suffix="final"):
         df_results['ingredient'] = ingredient
         df_results['step'] = int(step.replace("step", "")) if step else None
         df_results['tokens_seen'] = tokens.replace("tokens", "") if tokens else None
+    
+    elif revision and "Olmo-3" in model_path:
+    	parts = revision.split("_") 
+    	step = next((p for p in parts if p.startswith("step")), None)
+    	tokens = next((p for p in parts if p.startswith("tokens")), None)
+
+    	df_results['stage'] = None
+    	df_results['ingredient'] = None
+    	df_results['step'] = int(step.replace("step", "")) if step else None
+    	df_results['tokens_seen'] = tokens.replace("tokens", "") if tokens else None
+
     else:
-        df_results['stage'] = None
-        df_results['ingredient'] = None
-        df_results['step'] = None
-        df_results['tokens_seen'] = None
+    	df_results['stage'] = None
+    	df_results['ingredient'] = None
+    	df_results['step'] = None
+    	df_results['tokens_seen'] = None
 
 
     df_results.to_csv(os.path.join(savepath,filename), index=False)
