@@ -5,8 +5,10 @@ For OLMo 2: last checkpoint from log-spaced stage1 sample.
 """
 import argparse
 import json
-
 import re
+import warnings
+
+
 import pandas as pd
 import numpy as np
 import torch
@@ -105,7 +107,11 @@ def get_revision_list(model_path: str, all_revisions: list[str]) -> list[str]:
         return [item for sublist in all_selected for item in (sublist if isinstance(sublist, list) else [sublist])]
 
     print(f"No stage1/stage2 structure found for {model_path}. Using fallback.")
-    indices = sample_log_indices(min(min_k_stage1, len(checkpoints_sorted)), checkpoints_sorted)
+    if len(checkpoints_sorted) < 40:
+    	# just keep all of them
+    	indices,  = enumerate(checkpoints_sorted)
+    else: 
+	    indices = sample_log_indices(min(min_k_stage1, len(checkpoints_sorted)), checkpoints_sorted)
     return [checkpoints_sorted[i] for i in indices]
 
 
@@ -121,10 +127,13 @@ def get_last_stage1_from_revision_list(model_path: str) -> str:
     # Filter to just stage1 checkpoints from the revision list
     stage1_from_list = [r for r in revision_list if "stage1" in r]
     if not stage1_from_list:
-        raise ValueError(f"No stage1 checkpoints in revision list for {model_path}")
-
-    last = stage1_from_list[-1]
-    print(f"  Last stage1 checkpoint from revision list for {model_path}: {last}")
+    	warnings.warn(f"No stage1 checkpoints in revision list for {model_path}")
+    	last = revision_list[-1]
+    	print(f"  Last checkpoint from revision list for {model_path}: {last}")
+	else: 
+		last = stage1_from_list[-1]
+		print(f"  Last stage1 checkpoint from revision list for {model_path}: {last}")
+    
     return last
 
 def load_jsonl(path: str) -> list[dict]:
