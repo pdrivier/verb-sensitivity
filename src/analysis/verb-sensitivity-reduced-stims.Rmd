@@ -110,11 +110,57 @@ df_summ_lo <- df_all_models %>%
   filter(step == max_step) %>%
   left_join(param_lookup, by = "model_shorthand") %>%
   group_by(model_shorthand, n_params, model_family, knowledge_state,
-           knowledge_state_format, cues_available, verb_type) %>%
+           cues_available, verb_type, relocation_verb_tense) %>%
   summarise(mean_lo = mean(log_odds),
             se_lo = sd(log_odds) / sqrt(n()),
             .groups = "drop") %>%
   mutate(model_shorthand = fct_reorder(model_shorthand, n_params))
+
+# First, filter for just the stims that had unresolved knowledge states
+df_verb_only <- df_summ_lo %>%
+  filter(cues_available == "Knowledge Cue")
+
+df_verb_only %>%
+  ggplot(aes(x = model_shorthand,
+             y = mean_lo,
+             fill = verb_type)) + 
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  scale_color_manual(values = viridisLite::viridis(6, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_fill_manual(values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_x_discrete(labels = label_wrap(7)) + 
+  theme_minimal(base_size = 16) +
+  labs(title = "Reduced Stimulus Results",
+       subtitle = "Anna (moved/moves) Sean's book from the box to the basket. Sean...",
+       x = "Language Model", y = "Mean Log Odds", fill = "Verb Type") +
+  facet_grid(relocation_verb_tense~model_family, scales = "free_x")
+
+  
+  
+  
+  
+
+
+df_all_models_fb = df_all_models_fb %>%
+  mutate(correct = case_when(
+    condition == "False Belief" & log_odds > 0 ~ TRUE,
+    condition == "True Belief" & log_odds <= 0 ~ TRUE,
+    TRUE ~ FALSE  # all other cases are incorrect
+  ))
+
+df_summ_fb = df_all_models_fb %>%
+  group_by(model_path, model_shorthand,
+           step, tokens_seen_numeric, model_family, stage) %>%
+  summarise(mean_accuracy = mean(correct)) %>%
+  mutate(tokens_seen_numeric_mod = tokens_seen_numeric + 1)
+df_summ_fb %>%
+  select(model_shorthand, mean_accuracy)
+mean(df_all_models_fb$correct)
+
 
 ## FINAL CHECKPOINT 
 library(scales)
@@ -122,17 +168,17 @@ library(scales)
 df_summ_lo %>%
   ggplot(aes(x = model_shorthand,
              y = mean_lo,
-             fill = cues_available,
-             alpha = verb_type,
-             group = interaction(cues_available, knowledge_state_format))) +
+             fill = verb_type,
+             alpha = knowledge_state,
+             group = interaction(verb_type, knowledge_state))) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6) +
   geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
                 position = position_dodge(width = 0.7), width = 0.2) +
   geom_hline(yintercept = 0, linetype = "dotted") +
-  scale_color_manual(values = viridisLite::viridis(4, option = "mako", 
+  scale_color_manual(values = viridisLite::viridis(6, option = "mako", 
                                                   begin = 0.8, end = 0.15)) +
-  scale_alpha_manual(values = c("Explicit" = 1, "Implicit" = 0.3)) +
-  scale_fill_manual(values = viridisLite::viridis(2, option = "mako", 
+  scale_alpha_manual(values = c("Explicit" = 1, "neutral" = 0.2, "Implicit" = 0.5)) +
+  scale_fill_manual(values = viridisLite::viridis(4, option = "mako", 
                                                   begin = 0.8, end = 0.15)) +
   scale_x_discrete(labels = label_wrap(7)) + 
   theme_minimal(base_size = 16) +
