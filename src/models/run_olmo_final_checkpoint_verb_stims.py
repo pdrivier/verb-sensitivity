@@ -187,14 +187,14 @@ def main(model_path, filepath, revision=None, suffix="final"):
 
     results = []
     ### Run model
-	with open(filepath, "r", encoding="utf-8") as file:
-		for line_number, line in enumerate(file, start=1):
-			if not line.strip():
-				continue
-			try:
-				items = json.loads(line)   # a list of dicts
-			except json.JSONDecodeError:
-				print(f"Error parsing line {line_number}: {line.strip()}")
+    with open(filepath, "r", encoding="utf-8") as file:
+    	for line_number, line in enumerate(file, start=1):
+    		if not line.strip():
+    			continue
+    		try:
+    			items = json.loads(line)   # a list of dicts
+    		except json.JSONDecodeError:
+    			print(f"Error parsing line {line_number}: {line.strip()}")
     			continue
 
     		for row in items:
@@ -294,4 +294,4 @@ if __name__ == "__main__":
             suffix = rev.replace("/", "_")
             print(f"Running FB for: {model_path} @ {rev}")
             main(model_path, filepath = filepath, revision=rev, suffix=suffix)
-            #clear_huggingface_cache()
+            clear_huggingface_cache()
