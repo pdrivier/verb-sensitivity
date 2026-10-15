@@ -187,51 +187,50 @@ def main(model_path, filepath, revision=None, suffix="final"):
 
     results = []
     ### Run model
-    with open(filepath, "r", encoding="utf-8") as file:
-    	for line_number, line in enumerate(file, start=1):
-    		if not line.strip():
-    			continue
-    		try:
-    			items = json.loads(line)   # a list of dicts
-    		except json.JSONDecodeError:
-    			print(f"Error parsing line {line_number}: {line.strip()}")
+	with open(filepath, "r", encoding="utf-8") as file:
+		for line_number, line in enumerate(file, start=1):
+			if not line.strip():
+				continue
+			try:
+				items = json.loads(line)   # a list of dicts
+			except json.JSONDecodeError:
+				print(f"Error parsing line {line_number}: {line.strip()}")
     			continue
 
     		for row in items:
-				try:
-					reduced_passage = row["passage"]
-					start_location = " " + row["start"]
-					end_location = " " + row["end"]
+    			try:
+    				reduced_passage = row["passage"]
+    				start_location = " " + row["start"]
+    				end_location = " " + row["end"]
 
-					start_prob = next_seq_prob(model, tokenizer, reduced_passage, start_location)
-					end_prob = next_seq_prob(model, tokenizer, reduced_passage, end_location)
+    				start_prob = next_seq_prob(model, tokenizer, reduced_passage, start_location)
+    				end_prob = next_seq_prob(model, tokenizer, reduced_passage, end_location)
 
-					if start_prob == 0 or end_prob == 0:
-						continue
+    				if start_prob == 0 or end_prob == 0:
+    					continue
 
-					tokenized_passage = return_tokenized_passage(tokenizer, reduced_passage)
+    				tokenized_passage = return_tokenized_passage(tokenizer, reduced_passage)
 
-					results.append({
-	                    'start_prob': start_prob,
-	                    'end_prob': end_prob,
-	                    'passage': reduced_passage,
-	                    'tokenized_passage': tokenized_passage,
-	                    'start': row['start'],
-	                    'end': row['end'],
-	                    'knowledge_state_format': row['knowledge_state_format'],
-	                    'knowledge_cue': row['knowledge_cue'],
-	                    'knowledge_state': row['knowledge_state'],
-	                    'cues_available': row['cues_available'],
-	                    'first_mention': row['first_mention'],
-	                    'recent_mention': row['recent_mention'],
-	                    'log_odds': np.log2(start_prob / end_prob),
-	                    'verb': row['verb'],
-	                    'verb_type': row['verb_type'],
-	                    'relocation_verb_tense': row['relocation_verb_tense'],
-	                    'query': row['query'],
-	                    })
-				except KeyError as e:
-					print(f"Missing key {e} on line {line_number}")
+    				results.append({
+    					'start_prob': start_prob,
+    					'end_prob': end_prob,
+    					'passage': reduced_passage,
+    					'tokenized_passage': tokenized_passage,
+    					'start': row['start'],
+    					'end': row['end'],
+    					'knowledge_state_format': row['knowledge_state_format'],
+    					'knowledge_state': row['knowledge_state'],
+    					'cues_available': row['cues_available'],
+    					'first_mention': row['first_mention'],
+    					'recent_mention': row['recent_mention'],
+    					'log_odds': np.log2(start_prob / end_prob),
+    					'verb': row['verb'],
+    					'verb_type': row['verb_type'],
+    					'relocation_verb_tense': row['relocation_verb_tense'],
+    					'query': row['query'],
+    					})
+    			except KeyError as e:
+    				print(f"Missing key {e} on line {line_number}")
 
     ### Create DataFRame
     df_results = pd.DataFrame(results)
@@ -295,4 +294,4 @@ if __name__ == "__main__":
             suffix = rev.replace("/", "_")
             print(f"Running FB for: {model_path} @ {rev}")
             main(model_path, filepath = filepath, revision=rev, suffix=suffix)
-            clear_huggingface_cache()
+            #clear_huggingface_cache()
