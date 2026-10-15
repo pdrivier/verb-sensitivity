@@ -264,13 +264,12 @@ def main(model_path, filepath, revision=None, suffix="final"):
     
     elif revision and "Olmo-3" in model_path:
     	parts = revision.split("_") 
-    	step = next((p for p in parts if p.startswith("step")), None)
-    	tokens = next((p for p in parts if p.startswith("tokens")), None)
+    	step = parts[-1]
 
     	df_results['stage'] = None
     	df_results['ingredient'] = None
     	df_results['step'] = int(step.replace("step", "")) if step else None
-    	df_results['tokens_seen'] = tokens.replace("tokens", "") if tokens else None
+    	df_results['tokens_seen'] = None
 
     else:
     	df_results['stage'] = None
@@ -318,4 +317,4 @@ if __name__ == "__main__":
             suffix = rev.replace("/", "_")
             print(f"Running FB for: {model_path} @ {rev}")
             main(model_path, filepath = filepath, revision=rev, suffix=suffix)
-            clear_huggingface_cache()
+            #clear_huggingface_cache()
