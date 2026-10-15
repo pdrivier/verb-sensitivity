@@ -1,6 +1,6 @@
 ---
 title: "Verb Sensitivity - Reduced Stimuli"
-author: "Pam Rivière"
+author: "Pam Rivière, Sean Trott"
 date: "October 15, 2026"
 output:
   html_document:
@@ -62,8 +62,86 @@ df_all_models <- df_all_models %>%
 
 metadata <- read_csv("data/raw/metadata_models.csv")
 # merge the metadata with the fb task df
-df_all_models_control_task <- df_all_models %>% left_join(metadata, by = "model_shorthand")
+df_all_models_reduced_stims <- df_all_models %>% left_join(metadata, by = "model_shorthand")
+
+tokens_seen_pythia <- read_csv("data/raw/pythia_tokens_seen.csv")
+# merge stepwise tokens data for Pythia models
+df_all_models_reduced_stims <- df_all_models_reduced_stims %>%
+  left_join(tokens_seen_pythia %>% select(model_shorthand, step, tokens_seen_from_df1 = tokens_seen_numeric), 
+            by = c("model_shorthand", "step")) %>%
+  mutate(tokens_seen_numeric = coalesce(tokens_seen_numeric, tokens_seen_from_df1)) %>%
+  select(-tokens_seen_from_df1) %>%
+  mutate(tokens_seen_numeric_mod = tokens_seen_numeric + 1)
+
+df_all_models_reduced_stims <- df_all_models_reduced_stims %>%
+  mutate(model_family = case_when(
+    model_shorthand %in% c("Pythia 14m", "Pythia 1b", 
+                           "Pythia 6.9b", "Pythia 12b") ~ "Pythia",
+    model_shorthand %in% c("Olmo 2 1b", "Olmo 2 7b", "Olmo 2 13b") ~ "Olmo 2",
+    model_shorthand %in% c("Olmo 3 7b", "Olmo 3 32b-Think") ~ "Olmo 3"
+  ))
+
+```
+
+```{r param_lookup}
+# Map model names to parameter counts for ordering
+param_lookup <- tibble(
+  model_shorthand = c("Pythia 14m", "Pythia 1b", "Pythia 6.9b", "Pythia 12b",
+                       "Olmo 2 1b", "Olmo 2 7b", "Olmo 2 13b", "Olmo 2 32b",
+                      "Olmo 3 7b", "Olmo 3 32b-Think"),
+  n_params = c(14e6, 1e9, 6.9e9, 12e9, 1e9, 7e9, 13e9, 32e9, 7e9, 32e9),
+  model_family = c("Pythia", "Pythia", "Pythia", "Pythia",
+                    "OLMo 2", "OLMo 2", "OLMo 2", "OLMo 2",
+                   "OLMo 3", "OLMo 3")
+)
+```
+
+## Accuracy metric
+
+### Final checkpoint
+```{r accuracy_final_checkpoint}
+df_all_models %>%
+  group_by(model_shorthand) %>%
+  summarise(max_step = max(step))
+
+df_summ_lo <- df_all_models %>%
+  group_by(model_shorthand) %>%
+  mutate(max_step = max(step)) %>%
+  filter(step == max_step) %>%
+  left_join(param_lookup, by = "model_shorthand") %>%
+  group_by(model_shorthand, n_params, model_family, knowledge_state,
+           knowledge_state_format, cues_available, verb_type) %>%
+  summarise(mean_lo = mean(log_odds),
+            se_lo = sd(log_odds) / sqrt(n()),
+            .groups = "drop") %>%
+  mutate(model_shorthand = fct_reorder(model_shorthand, n_params))
+
+## FINAL CHECKPOINT 
+library(scales)
+
+df_summ_lo %>%
+  ggplot(aes(x = model_shorthand,
+             y = mean_lo,
+             fill = cues_available,
+             alpha = verb_type,
+             group = interaction(cues_available, knowledge_state_format))) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  scale_color_manual(values = viridisLite::viridis(4, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_alpha_manual(values = c("Explicit" = 1, "Implicit" = 0.3)) +
+  scale_fill_manual(values = viridisLite::viridis(2, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_x_discrete(labels = label_wrap(7)) + 
+  theme_minimal(base_size = 16) +
+  labs(title = "Reduced Stimulus Results",
+       x = "Language Model", y = "Mean Log Odds", fill = "Information Available", alpha = "Verb Type") +
+  facet_wrap(~model_family, scales = "free_x")
 
 
 ```
+
+
 
