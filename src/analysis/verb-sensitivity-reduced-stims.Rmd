@@ -96,15 +96,15 @@ param_lookup <- tibble(
 )
 ```
 
-## Accuracy metric
+## Log-Odds
 
 ### Final checkpoint
 ```{r accuracy_final_checkpoint}
-df_all_models %>%
+df_all_models_reduced_stims %>%
   group_by(model_shorthand) %>%
   summarise(max_step = max(step))
 
-df_summ_lo <- df_all_models %>%
+df_summ_lo <- df_all_models_reduced_stims %>%
   group_by(model_shorthand) %>%
   mutate(max_step = max(step)) %>%
   filter(step == max_step) %>%
@@ -139,9 +139,24 @@ df_verb_only %>%
        x = "Language Model", y = "Mean Log Odds", fill = "Verb Type") +
   facet_grid(relocation_verb_tense~model_family, scales = "free_x")
 
-  
-  
-  
+
+# Visualize the distribution of raw probabilities for Olmo 2 13b, for past and present
+# tense passages separately (what magnitude are the even-odds that we see for nonfactives?)
+df_all_models_reduced_stims %>%
+  filter(model_shorthand == "Olmo 2 13b") %>%
+  pivot_longer(cols = c(start_prob,end_prob),
+               names_to = "variable",
+               values_to = "value") %>%
+  ggplot(aes(x = value, fill = variable)) + 
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(labels = c("End (consistent with TB)", "Start (consistent with FB)"),
+                    values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  facet_grid(verb_type~relocation_verb_tense) + 
+  labs(title = "Reduced Stimulus Results - Olmo 2 13b",
+       subtitle = "Anna (moved/moves) Sean's book from the box to the basket. Sean...",
+       x = "Probability", y = "Density", fill = "Predicted Location") +
+  theme_minimal(base_size = 16)
   
 
 
