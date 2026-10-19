@@ -91,8 +91,8 @@ param_lookup <- tibble(
                       "Olmo 3 7b", "Olmo 3 32b-Think"),
   n_params = c(14e6, 1e9, 6.9e9, 12e9, 1e9, 7e9, 13e9, 32e9, 7e9, 32e9),
   model_family = c("Pythia", "Pythia", "Pythia", "Pythia",
-                    "OLMo 2", "OLMo 2", "OLMo 2", "OLMo 2",
-                   "OLMo 3", "OLMo 3")
+                    "Olmo 2", "Olmo 2", "Olmo 2", "Olmo 2",
+                   "Olmo 3", "Olmo 3")
 )
 ```
 
@@ -104,17 +104,17 @@ df_all_models_reduced_stims %>%
   group_by(model_shorthand) %>%
   summarise(max_step = max(step))
 
-df_summ_lo <- df_all_models_reduced_stims %>%
+df_summ_lo <- df_all_models %>%
   group_by(model_shorthand) %>%
   mutate(max_step = max(step)) %>%
   filter(step == max_step) %>%
   left_join(param_lookup, by = "model_shorthand") %>%
   group_by(model_shorthand, n_params, model_family, knowledge_state,
-           cues_available, verb_type, relocation_verb_tense) %>%
+           cues_available, verb_type,knowledge_state_format, relocation_verb_tense) %>%
   summarise(mean_lo = mean(log_odds),
             se_lo = sd(log_odds) / sqrt(n()),
             .groups = "drop") %>%
-  mutate(model_shorthand = fct_reorder(model_shorthand, n_params))
+  mutate(model_shorthand = fct_reorder(model_shorthand, n_params, .na_rm = TRUE))
 
 # First, filter for just the stims that had unresolved knowledge states
 df_verb_only <- df_summ_lo %>%
@@ -176,6 +176,140 @@ df_all_models_reduced_stims %>%
        x = "Probability", y = "Density", fill = "Predicted Location") +
   theme_minimal(base_size = 16)
   
+# Visualize the distribution of raw probabilities for Olmo 2 32b-think, for past and present
+# tense passages separately
+df_all_models_reduced_stims %>%
+  filter(model_shorthand == "Olmo 3 32b-Think") %>%
+  pivot_longer(cols = c(start_prob,end_prob),
+               names_to = "variable",
+               values_to = "value") %>%
+  ggplot(aes(x = value, fill = variable)) + 
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(labels = c("End (consistent with TB)", "Start (consistent with FB)"),
+                    values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  facet_grid(verb_type~relocation_verb_tense) + 
+  labs(title = "Reduced Stimulus Results - Olmo 2 32b-Think",
+       subtitle = "Anna (moved/moves) Sean's book from the box to the basket. Sean...",
+       x = "Probability", y = "Density", fill = "Predicted Location") +
+  theme_minimal(base_size = 16)
+
+```
+
+## Reduced Stims: Knowledge State & Knowledge Cue
+```{r}
+# redo the df_summ_lo by new grouping variables that matter when both state and 
+# cue information are available
+df_all_models_reduced_stims %>%
+  group_by(model_shorthand) %>%
+  summarise(max_step = max(step))
+
+df_verb_and_state <- df_summ_lo %>%
+  filter(cues_available == "Knowledge Cue + State")
+
+# --------
+# Olmo 2 13b
+# --------
+df_verb_and_state %>%
+  filter(model_shorthand == "Olmo 2 13b") %>%
+  ggplot(aes(x = model_shorthand,
+             y = mean_lo,
+             fill = verb_type)) + 
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  scale_color_manual(values = viridisLite::viridis(6, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_fill_manual(values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_x_discrete(labels = label_wrap(7)) + 
+  theme_minimal(base_size = 16) +
+  labs(title = "Reduced Stimulus Results - Olmo 2 13b",
+       subtitle = "Sean watches Anna move ... 
+       \nSean doesn't see Anna move ... 
+       \nSean is there when Anna moves ... 
+       \nWhile Sean is away, Anna moves ...",
+       x = "Language Model", y = "Mean Log Odds", fill = "Verb Type") +
+  facet_grid(knowledge_state_format~knowledge_state, scales = "free_x")
+
+# --------
+# Olmo 2 32b
+# --------
+df_verb_and_state %>%
+  filter(model_shorthand == "Olmo 2 32b") %>%
+  ggplot(aes(x = model_shorthand,
+             y = mean_lo,
+             fill = verb_type)) + 
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  scale_color_manual(values = viridisLite::viridis(6, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_fill_manual(values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_x_discrete(labels = label_wrap(7)) + 
+  theme_minimal(base_size = 16) +
+  labs(title = "Reduced Stimulus Results - Olmo 2 32b",
+       subtitle = "Sean watches Anna move ... 
+       \nSean doesn't see Anna move ... 
+       \nSean is there when Anna moves ... 
+       \nWhile Sean is away, Anna moves ...",
+       x = "Language Model", y = "Mean Log Odds", fill = "Verb Type") +
+  facet_grid(knowledge_state_format~knowledge_state, scales = "free_x")
+
+# --------
+# Olmo 3 7b
+# --------
+df_verb_and_state %>%
+  filter(model_shorthand == "Olmo 3 7b") %>%
+  ggplot(aes(x = model_shorthand,
+             y = mean_lo,
+             fill = verb_type)) + 
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  scale_color_manual(values = viridisLite::viridis(6, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_fill_manual(values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_x_discrete(labels = label_wrap(7)) + 
+  theme_minimal(base_size = 16) +
+  labs(title = "Reduced Stimulus Results - Olmo 3 7b",
+       subtitle = "Sean watches Anna move ... 
+       \nSean doesn't see Anna move ... 
+       \nSean is there when Anna moves ... 
+       \nWhile Sean is away, Anna moves ...",
+       x = "Language Model", y = "Mean Log Odds", fill = "Verb Type") +
+  facet_grid(knowledge_state_format~knowledge_state, scales = "free_x")
+# --------
+# Olmo 3 32b-Think
+# --------
+df_verb_and_state %>%
+  filter(model_shorthand == "Olmo 3 32b-Think") %>%
+  ggplot(aes(x = model_shorthand,
+             y = mean_lo,
+             fill = verb_type)) + 
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
+                position = position_dodge(width = 0.7), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  scale_color_manual(values = viridisLite::viridis(6, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_fill_manual(values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  scale_x_discrete(labels = label_wrap(7)) + 
+  theme_minimal(base_size = 16) +
+  labs(title = "Reduced Stimulus Results - Olmo 3 32b-Think",
+       subtitle = "Sean watches Anna move ... 
+       \nSean doesn't see Anna move ... 
+       \nSean is there when Anna moves ... 
+       \nWhile Sean is away, Anna moves ...",
+       x = "Language Model", y = "Mean Log Odds", fill = "Verb Type") +
+  facet_grid(knowledge_state_format~knowledge_state, scales = "free_x")
+
 
 
 df_all_models_fb = df_all_models_fb %>%
