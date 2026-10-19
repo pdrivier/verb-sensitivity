@@ -157,6 +157,24 @@ df_all_models_reduced_stims %>%
        subtitle = "Anna (moved/moves) Sean's book from the box to the basket. Sean...",
        x = "Probability", y = "Density", fill = "Predicted Location") +
   theme_minimal(base_size = 16)
+
+# Visualize the distribution of raw probabilities for Olmo 2 32b, for past and present
+# tense passages separately
+df_all_models_reduced_stims %>%
+  filter(model_shorthand == "Olmo 2 32b") %>%
+  pivot_longer(cols = c(start_prob,end_prob),
+               names_to = "variable",
+               values_to = "value") %>%
+  ggplot(aes(x = value, fill = variable)) + 
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(labels = c("End (consistent with TB)", "Start (consistent with FB)"),
+                    values = viridisLite::viridis(3, option = "mako", 
+                                                  begin = 0.8, end = 0.15)) +
+  facet_grid(verb_type~relocation_verb_tense) + 
+  labs(title = "Reduced Stimulus Results - Olmo 2 32b",
+       subtitle = "Anna (moved/moves) Sean's book from the box to the basket. Sean...",
+       x = "Probability", y = "Density", fill = "Predicted Location") +
+  theme_minimal(base_size = 16)
   
 
 
