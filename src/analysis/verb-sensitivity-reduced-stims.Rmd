@@ -311,32 +311,6 @@ df_verb_and_state %>%
   facet_grid(knowledge_state_format~knowledge_state, scales = "free_x")
 
 
-
-## FINAL CHECKPOINT 
-library(scales)
-
-df_summ_lo %>%
-  ggplot(aes(x = model_shorthand,
-             y = mean_lo,
-             fill = verb_type,
-             alpha = knowledge_state,
-             group = interaction(verb_type, knowledge_state))) +
-  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
-  geom_errorbar(aes(ymin = mean_lo - se_lo, ymax = mean_lo + se_lo),
-                position = position_dodge(width = 0.7), width = 0.2) +
-  geom_hline(yintercept = 0, linetype = "dotted") +
-  scale_color_manual(values = viridisLite::viridis(6, option = "mako", 
-                                                  begin = 0.8, end = 0.15)) +
-  scale_alpha_manual(values = c("Explicit" = 1, "neutral" = 0.2, "Implicit" = 0.5)) +
-  scale_fill_manual(values = viridisLite::viridis(4, option = "mako", 
-                                                  begin = 0.8, end = 0.15)) +
-  scale_x_discrete(labels = label_wrap(7)) + 
-  theme_minimal(base_size = 16) +
-  labs(title = "Reduced Stimulus Results",
-       x = "Language Model", y = "Mean Log Odds", fill = "Information Available", alpha = "Verb Type") +
-  facet_wrap(~model_family, scales = "free_x")
-
-
 ```
 
 
