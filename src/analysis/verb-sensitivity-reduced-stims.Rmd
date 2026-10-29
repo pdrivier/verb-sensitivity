@@ -312,23 +312,6 @@ df_verb_and_state %>%
 
 
 
-df_all_models_fb = df_all_models_fb %>%
-  mutate(correct = case_when(
-    condition == "False Belief" & log_odds > 0 ~ TRUE,
-    condition == "True Belief" & log_odds <= 0 ~ TRUE,
-    TRUE ~ FALSE  # all other cases are incorrect
-  ))
-
-df_summ_fb = df_all_models_fb %>%
-  group_by(model_path, model_shorthand,
-           step, tokens_seen_numeric, model_family, stage) %>%
-  summarise(mean_accuracy = mean(correct)) %>%
-  mutate(tokens_seen_numeric_mod = tokens_seen_numeric + 1)
-df_summ_fb %>%
-  select(model_shorthand, mean_accuracy)
-mean(df_all_models_fb$correct)
-
-
 ## FINAL CHECKPOINT 
 library(scales)
 
